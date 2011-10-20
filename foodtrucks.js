@@ -39,7 +39,7 @@ follow({db: datacouch + gpsDB, include_docs: true, filter: "gps/by_value", query
       request.get({url: source}, function(e,r,b) {
        var loc = {
          _id: b._id,
-         neighborhood: neighborhood
+         neighborhood: neighborhood,
          geometry: {type: "Point", coordinates: [b['LONGITUDE'], b['LATITUDE']]},
          truck: b["VEHICLE_LABEL"],
          moving: b["PVT_TYPE"],

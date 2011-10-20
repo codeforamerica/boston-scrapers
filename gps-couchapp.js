@@ -12,4 +12,11 @@ ddoc.spatial = {
   }
 }
 
+ddoc.filters = {
+  by_value: function(doc, req) {
+    if (!req.query.k || !req.query.v || !doc[req.query.k]) return false;
+    return doc[req.query.k] + "" === req.query.v;
+  }
+}
+
 module.exports = ddoc;
