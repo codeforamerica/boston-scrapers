@@ -22,39 +22,30 @@ var request = require('request').defaults({json: true})
 var datacouch = process.env['DATACOUCH_ROOT']
   , gpsDB = "/boston-gps" // the private db where esri_track_to_couch saves data from ESRI Tracking Server
   , foodTrucksDB = "/dc8364385fc612b847d66ca7886519749c" // the public food truck database on datacouch
-  , neighborhoods = "http://data.ic.ht/dc793ad17aa3a3114c2f323726b227687d/_design/gps/_spatial/neighborhood?bbox="
-    // this DB has to have gps-couchapp.js installed into it and also contain neighborhood boundary polygons
   ;
 
 follow({db: datacouch + gpsDB, include_docs: true, filter: "gps/by_value", query_params: {k: "CLIENT_ID", v: "36155"}}, function(error, change) {
-  if (error || change.deleted || !("doc" in change)) return;
-  var lonlat = change.doc['LONGITUDE'] + "," + change.doc['LATITUDE'];
-  request({url: neighborhoods + lonlat + ',' + lonlat}, function(e,r,b) {
-    if (b.rows.length > 0) {
-      var source = datacouch + gpsDB + '/' + change.id
-        , destination = datacouch + foodTrucksDB + '/' + change.id
-        , neighborhood = b.rows[0].value
-        ;  
-   
-      request.get({url: source}, function(e,r,b) {
-       var loc = {
-         _id: b._id,
-         neighborhood: neighborhood,
-         geometry: {type: "Point", coordinates: [b['LONGITUDE'], b['LATITUDE']]},
-         truck: b["VEHICLE_LABEL"],
-         moving: b["PVT_TYPE"],
-         street: b["STREET"],
-         cross_street: b["CROSS_STREET"],
-         stopped_for: b["STOP_DURATION"],
-         heading: b["HEADING"],
-         city: b["CITY"],
-         time: new Date(b["LOCATION_TIME"])
-       }
-       request({url: destination, method: "PUT", body: loc}
-         , function(err, resp, body) {
-           console.log(change.id, body)
-         })
-      })
-    }
-  })
+  if (error || change.deleted || !("doc" in change) || (change.doc["CITY"] !== "BOSTON")) return;
+  
+  var source = datacouch + gpsDB + '/' + change.id
+    , destination = datacouch + foodTrucksDB + '/' + change.id
+    , b = change.doc
+    ;  
+
+  var loc = {
+    geometry: {type: "Point", coordinates: [ b['LONGITUDE'], b['LATITUDE'] ]},
+    truck: b["VEHICLE_LABEL"],
+    moving: b["PVT_TYPE"],
+    street: b["STREET"],
+    cross_street: b["CROSS_STREET"],
+    stopped_for: b["STOP_DURATION"],
+    heading: b["HEADING"],
+    city: b["CITY"],
+    time: new Date(b["LOCATION_TIME"])
+  }
+    
+  request({url: destination, method: "PUT", body: loc}
+    , function(err, resp, body) {
+      console.log(change.id, body)
+    })
 })
