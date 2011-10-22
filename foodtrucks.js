@@ -41,6 +41,7 @@ follow({db: datacouch + gpsDB, include_docs: true, filter: "gps/by_value", query
     stopped_for: b["STOP_DURATION"],
     heading: b["HEADING"],
     city: b["CITY"],
+    gpsID: b["SERIAL_NO"],
     time: new Date(b["LOCATION_TIME"])
   }
     
