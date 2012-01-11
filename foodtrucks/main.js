@@ -22,7 +22,14 @@ var request = require('request').defaults({json: true})
 var datacouch = process.env['DATACOUCH_ROOT']
   , gpsDB = "/boston-gps" // the private db where esri_track_to_couch saves data from ESRI Tracking Server
   , foodTrucksDB = "/dc8364385fc612b847d66ca7886519749c" // the public food truck database on datacouch
+  , lastAction = "server start"
   ;
+
+// for nodejitsu -- they require a running server
+require('http').createServer(function (req, res) {
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('food truck private public bridge is up.\nlast action: ' + JSON.stringify(lastAction));
+}).listen(1337);
 
 follow({db: datacouch + gpsDB, include_docs: true, filter: "gps/by_value", query_params: {k: "CLIENT_ID", v: "36155"}}, function(error, change) {
   if (error || change.deleted || !("doc" in change) || (change.doc["CITY"] !== "BOSTON")) return;
@@ -47,6 +54,8 @@ follow({db: datacouch + gpsDB, include_docs: true, filter: "gps/by_value", query
     
   request({url: destination, method: "PUT", body: loc}
     , function(err, resp, body) {
+      if (err) lastAction = err
+      else lastAction = new Date()
       console.log(change.id, body)
     })
 })
